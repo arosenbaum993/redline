@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REDLINE — Secure Writing Room</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FFFFFF; --ink:#141414; --red:#C8102E; --red-dark:#8F0B20;
+  --rule:#DEDEDE; --grey:#6E6E6E;
+  --mono:'Courier Prime','Courier New',Courier,monospace;
+  --stamp:'Special Elite','Courier Prime','Courier New',monospace;
+  --book:'Century Schoolbook','New Century Schoolbook','C059','Nimbus Roman',Georgia,serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--book);font-size:17px;line-height:1.55}
+#app{max-width:880px;margin:0 auto;padding:0 20px 80px}
+.mast{padding:26px 0 14px;border-bottom:3px double var(--ink);display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.mast h1{font-family:var(--stamp);font-size:30px;letter-spacing:.14em}
+.mast h1 .dot{color:var(--red)}
+.mast .who{font-family:var(--mono);font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--grey)}
+.mast .who b{color:var(--ink)}
+.mast .who a{color:var(--red);cursor:pointer}
+.crumb{font-family:var(--mono);font-size:13px;text-transform:uppercase;letter-spacing:.08em;margin:14px 0 0}
+.crumb a{color:var(--red);text-decoration:none;cursor:pointer}
+.crumb a:hover{text-decoration:underline}
+h2{font-family:var(--mono);font-weight:700;font-size:24px;text-transform:uppercase;letter-spacing:.04em;margin:30px 0 6px}
+h3{font-family:var(--mono);font-weight:700;font-size:16px;text-transform:uppercase;letter-spacing:.06em;margin:24px 0 8px}
+.sub{color:var(--grey);font-size:15px;margin-bottom:18px}
+.eyebrow{font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:var(--red);margin:26px 0 6px}
+label{display:block;font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.1em;margin:16px 0 5px}
+input[type=text],input[type=email],input[type=password],input[type=number],textarea,select{
+  width:100%;border:2px solid var(--ink);border-radius:0;background:#fff;color:var(--ink);
+  font-family:var(--mono);font-size:16px;padding:10px 12px;outline:none}
+input:focus,textarea:focus,select:focus{border-color:var(--red);box-shadow:2px 2px 0 var(--red)}
+textarea{min-height:110px;resize:vertical}
+.btn{display:inline-block;border:2px solid var(--ink);border-radius:0;background:var(--ink);color:#fff;
+  font-family:var(--mono);font-weight:700;font-size:14px;text-transform:uppercase;letter-spacing:.08em;
+  padding:10px 18px;cursor:pointer;margin:6px 8px 6px 0}
+.btn:hover{background:#000}
+.btn:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+.btn.ghost{background:#fff;color:var(--ink)}
+.btn.ghost:hover{background:#f3f3f3}
+.btn.red{background:var(--red);border-color:var(--red)}
+.btn.red:hover{background:var(--red-dark);border-color:var(--red-dark)}
+.btn.sm{font-size:12px;padding:6px 10px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.card{border:2px solid var(--ink);padding:18px;margin:14px 0;background:#fff}
+.card.clickable{cursor:pointer}
+.card.clickable:hover{box-shadow:4px 4px 0 var(--red)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.meta{font-family:var(--mono);font-size:13px;color:var(--grey)}
+.hr{border:none;border-top:1px solid var(--rule);margin:22px 0}
+.stamp{display:inline-block;font-family:var(--stamp);text-transform:uppercase;letter-spacing:.12em;
+  border:3px solid var(--red);color:var(--red);padding:3px 10px;font-size:13px;transform:rotate(-2deg);
+  background:#fff;white-space:nowrap}
+.stamp.ink{border-color:var(--ink);color:var(--ink)}
+.stamp.grey{border-color:var(--grey);color:var(--grey)}
+.stamp.big{font-size:34px;padding:10px 26px;border-width:5px;transform:rotate(-4deg)}
+.codeblock{border:3px solid var(--red);padding:18px 20px;margin:18px 0;background:#fff}
+.codeblock .lbl{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--red)}
+.codeblock .code{font-family:var(--stamp);font-size:44px;letter-spacing:.3em;margin:4px 0}
+.codeblock p{font-size:14px;color:var(--grey)}
+.tabs{display:flex;border-bottom:2px solid var(--ink);margin-top:24px}
+.tab{font-family:var(--mono);font-size:14px;text-transform:uppercase;letter-spacing:.06em;
+  padding:9px 16px;cursor:pointer;border:2px solid transparent;border-bottom:none;color:var(--grey)}
+.tab.on{border-color:var(--ink);background:#fff;color:var(--ink);font-weight:700;position:relative;top:2px}
+.room{border:2px solid var(--ink);margin-top:18px;background:#fff}
+.roombar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;
+  background:var(--ink);color:#fff;padding:10px 14px;font-family:var(--mono);font-size:13px;text-transform:uppercase;letter-spacing:.06em}
+.roombar .timer{font-family:var(--stamp);font-size:18px;letter-spacing:.1em}
+.roombar .timer.low{color:#FF8FA0}
+.prompt{padding:16px 18px;border-bottom:1px solid var(--rule);font-size:16px}
+.prompt .eyebrow{margin-top:0}
+.source{max-height:220px;overflow:auto;padding:14px 18px;border-bottom:1px solid var(--rule);
+  font-size:15px;background:#FAFAFA;white-space:pre-wrap}
+.deskwrap{position:relative}
+.deskwrap::before{content:"";position:absolute;top:0;bottom:0;left:56px;width:2px;background:var(--red);opacity:.55}
+.desk{width:100%;min-height:46vh;border:none;outline:none;resize:vertical;padding:22px 22px 22px 76px;
+  font-family:var(--mono);font-size:17px;line-height:1.9;background:
+  repeating-linear-gradient(transparent,transparent 31px,var(--rule) 31px,var(--rule) 32px)}
+.deskfoot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;
+  border-top:2px solid var(--ink);padding:10px 14px;font-family:var(--mono);font-size:13px}
+.flash{position:fixed;left:50%;top:18%;transform:translateX(-50%) rotate(-4deg);z-index:60;pointer-events:none;
+  font-family:var(--stamp);font-size:30px;text-transform:uppercase;letter-spacing:.14em;color:var(--red);
+  border:5px solid var(--red);padding:10px 22px;background:rgba(255,255,255,.95);opacity:0;transition:opacity .15s}
+.flash.show{opacity:1}
+.overlay{position:fixed;inset:0;background:rgba(255,255,255,.96);z-index:50;display:flex;align-items:center;justify-content:center;padding:20px}
+.overlay .box{max-width:520px;text-align:center}
+.overlay p{margin:14px 0;font-size:16px}
+table{width:100%;border-collapse:collapse;font-size:15px;margin-top:10px}
+th{font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.1em;text-align:left;
+  border-bottom:2px solid var(--ink);padding:8px 6px}
+td{border-bottom:1px solid var(--rule);padding:9px 6px;vertical-align:middle}
+.flagchips{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.chip{font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.06em;border:2px solid var(--ink);padding:4px 9px}
+.chip.warn{border-color:var(--red);color:var(--red);font-weight:700}
+.pace{display:flex;align-items:flex-end;gap:2px;height:90px;border:1px solid var(--rule);padding:6px;margin:10px 0;overflow-x:auto}
+.pace .bar{width:12px;background:var(--ink);flex:0 0 auto}
+.pace .bar.hot{background:var(--red)}
+.snapview{border:2px solid var(--ink);padding:16px;white-space:pre-wrap;font-family:var(--mono);font-size:15px;min-height:160px;max-height:340px;overflow:auto;margin-top:8px}
+.evline{font-family:var(--mono);font-size:13px;padding:3px 0;border-bottom:1px dashed var(--rule)}
+.evline .t{color:var(--grey)}
+.evline.bad{color:var(--red);font-weight:700}
+.note{border-left:4px solid var(--red);padding:8px 12px;background:#FFF5F6;font-size:14px;margin:14px 0}
+.checkline{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:14px;text-transform:uppercase;letter-spacing:.06em;margin:14px 0}
+.checkline input{width:20px;height:20px;accent-color:var(--red)}
+.err{border:2px solid var(--red);color:var(--red);font-family:var(--mono);font-size:14px;padding:10px 12px;margin:12px 0}
+@media (max-width:560px){
+  .mast h1{font-size:24px}
+  .desk{padding-left:64px;font-size:16px}
+  .codeblock .code{font-size:32px;letter-spacing:.2em}
+}
+@media (prefers-reduced-motion: reduce){ .stamp,.stamp.big,.flash{transform:none} }
+</style>
+</head>
+<body>
+<div id="app"><p style="font-family:monospace;padding:40px 0;color:#6E6E6E">Loading&hellip;</p></div>
+<div id="flash" class="flash" role="status" aria-live="polite"></div>
+
+<script type="module">
+/* ============================================================
+   STEP 1 OF SETUP: paste your Firebase web config between the
+   braces below. Firebase console → Project settings → Your apps
+   → SDK setup and configuration → Config.
+   ============================================================ */
+const firebaseConfig = {
+  apiKey: "AIzaSyAbBdUv1ORsW6B7NDqYxY0YHWjoGNZX2rU",
+  authDomain: "redline-mcss.firebaseapp.com",
+  projectId: "redline-mcss",
+  storageBucket: "redline-mcss.firebasestorage.app",
+  messagingSenderId: "1099009954506",
+  appId: "1:1099009954506:web:a79723f23eb92a74221a33"
+};
+
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInAnonymously, createUserWithEmailAndPassword,
+         signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signOut as fbSignOut
+       } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, getDoc, getDocs, setDoc, updateDoc, addDoc, deleteDoc, collection,
+         onSnapshot, query, where, writeBatch, serverTimestamp
+       } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* ---------------- utilities ---------------- */
+const app=document.getElementById('app');
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nowMs=()=>Date.now();
+const CODE_CHARS='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const makeCode=()=>Array.from({length:6},()=>CODE_CHARS[Math.floor(Math.random()*CODE_CHARS.length)]).join('');
+const fmtT=ms=>{const s=Math.max(0,Math.round(ms/1000));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+const wc=t=>(t||'').trim()?t.trim().split(/\s+/).length:0;
+function flash(msg){const f=document.getElementById('flash');f.textContent=msg;f.classList.add('show');
+  clearTimeout(f._t);f._t=setTimeout(()=>f.classList.remove('show'),1400)}
+window.addEventListener('error',e=>{const b=document.createElement('div');
+  b.style.cssText='background:#C8102E;color:#fff;font-family:monospace;font-size:13px;padding:8px 14px';
+  b.textContent='Script error: '+e.message;document.body.prepend(b)});
+
+/* ---------------- firebase boot ---------------- */
+if(!firebaseConfig.apiKey){
+  app.innerHTML=`<div class="mast"><h1>REDLINE<span class="dot">.</span></h1></div>
+  <h2 style="margin-top:40px">Almost there</h2>
+  <p class="sub">This copy hasn't been connected to Firebase yet.</p>
+  <div class="note">Open <b>public/index.html</b> and paste your Firebase web config into the
+  <b>firebaseConfig</b> object at the top of the script. Full steps are in SETUP.md.</div>`;
+  throw new Error('firebaseConfig not set');
+}
+const fbApp=initializeApp(firebaseConfig);
+const auth=getAuth(fbApp);
+const db=getFirestore(fbApp);
+
+/* ---------------- state / nav ---------------- */
+const S={view:'gate',user:null,teacher:null, code:null,classId:null,cls:null,
+         roster:{},assigns:[],tab:'assignments',aid:null,acc:{},works:{},
+         viewStudent:null,snapIx:null,sAcc:{},student:null};
+let UNSUBS=[];
+function clearSubs(){UNSUBS.forEach(u=>{try{u()}catch(e){}});UNSUBS=[]}
+let R=null; /* live writing session */
+function teardownRoom(){
+  if(!R)return;
+  document.removeEventListener('visibilitychange',R.visHandler);
+  window.removeEventListener('blur',R.blurHandler);
+  window.removeEventListener('focus',R.focusHandler);
+  if(R.keyHandler)document.removeEventListener('keydown',R.keyHandler);
+  clearInterval(R.saveTimer);clearInterval(R.tickTimer);
+  R=null;
+}
+function go(view,extra={}){clearSubs();teardownRoom();Object.assign(S,{view},extra);VIEWS[view]()}
+
+function mast(crumb){
+  const label=S.teacher?`Teacher: <b>${esc(S.teacher.name)}</b>`:(S.student?`Student: <b>${esc(S.student.name)}</b>`:'');
+  const out=label?`<span class="who">${label} · <a id="signout">sign out</a></span>`:'';
+  return `<div class="mast"><h1>REDLINE<span class="dot">.</span></h1>${out}</div>
+          ${crumb?`<div class="crumb">${crumb}</div>`:''}`;
+}
+function wireSignout(){const a=document.getElementById('signout');if(a)a.onclick=doSignOut}
+async function doSignOut(){
+  localStorage.removeItem('rl-role');localStorage.removeItem('rl-student');
+  S.teacher=null;S.student=null;
+  try{await fbSignOut(auth)}catch(e){}
+  go('gate');
+}
+
+/* ---------------- doc refs ---------------- */
+const dTeacher=uid=>doc(db,'teachers',uid);
+const dCode=c=>doc(db,'codes',c);
+const dClass=cid=>doc(db,'classes',cid);
+const cRoster=cid=>collection(db,'classes',cid,'roster');
+const dRoster=(cid,sid)=>doc(db,'classes',cid,'roster',sid);
+const cAssign=cid=>collection(db,'classes',cid,'assignments');
+const dAssign=(cid,aid)=>doc(db,'classes',cid,'assignments',aid);
+const cAccess=(cid,aid)=>collection(db,'classes',cid,'assignments',aid,'access');
+const dAccess=(cid,aid,sid)=>doc(db,'classes',cid,'assignments',aid,'access',sid);
+const cWork=(cid,aid)=>collection(db,'classes',cid,'assignments',aid,'work');
+const dWork=(cid,aid,sid)=>doc(db,'classes',cid,'assignments',aid,'work',sid);
+
+/* ---------------- boot ---------------- */
+onAuthStateChanged(auth,async user=>{
+  S.user=user;
+  const role=localStorage.getItem('rl-role');
+  if(user&&role==='teacher'){
+    const t=await getDoc(dTeacher(user.uid));
+    if(t.exists()){S.teacher=t.data();go('tHome');return}
+  }
+  if(user&&role==='student'){
+    const saved=JSON.parse(localStorage.getItem('rl-student')||'null');
+    if(saved){S.student=saved;S.classId=saved.classId;go('sClass');return}
+  }
+  go('gate');
+});
+
+/* ================= views ================= */
+const VIEWS={gate,tAuth,tHome,tClass,tMonitor,sJoin,sClass,sRoom};
+
+function gate(){
+  app.innerHTML=mast()+`
+  <h2 style="margin-top:60px">A room where the writing is the student's.</h2>
+  <p class="sub">No pasting. No wandering tabs. Every draft leaves a typing record the teacher can replay.</p>
+  <div class="card clickable" id="g-t"><div class="row"><div>
+    <h3 style="margin:0">I'm a teacher</h3><p class="meta">Create classes, open the room, score the work.</p>
+  </div><span class="stamp ink">Enter</span></div></div>
+  <div class="card clickable" id="g-s"><div class="row"><div>
+    <h3 style="margin:0">I'm a student</h3><p class="meta">Join with a class code and write when the room opens.</p>
+  </div><span class="stamp">Join</span></div></div>`;
+  document.getElementById('g-t').onclick=()=>go('tAuth');
+  document.getElementById('g-s').onclick=()=>go('sJoin');
+}
+
+/* ---------- teacher auth ---------- */
+function tAuth(){
+  app.innerHTML=mast(`<a id="back">&larr; Back</a>`)+`
+  <h2>Teacher sign-in</h2>
+  <label for="em">School email</label><input id="em" type="email" autocomplete="email">
+  <label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password">
+  <label for="nm">Display name (needed the first time only — how students see you)</label>
+  <input id="nm" type="text" placeholder="Ms. Rosenbaum">
+  <div style="margin-top:14px">
+    <button class="btn" id="b-in">Sign in</button>
+    <button class="btn ghost" id="b-up">Create account</button>
+    <button class="btn ghost" id="b-g">Sign in with Google</button>
+  </div>
+  <p id="aerr" class="err" style="display:none"></p>`;
+  document.getElementById('back').onclick=()=>go('gate');
+  const err=m=>{const e=document.getElementById('aerr');e.style.display='block';e.textContent=m};
+  const nameField=()=>document.getElementById('nm').value.trim();
+  async function finish(user,fallbackName){
+    let t=await getDoc(dTeacher(user.uid));
+    let name=t.exists()?t.data().name:(nameField()||fallbackName||user.email);
+    if(!t.exists())await setDoc(dTeacher(user.uid),{name,email:user.email||'',created:serverTimestamp()});
+    S.teacher={name};localStorage.setItem('rl-role','teacher');go('tHome');
+  }
+  document.getElementById('b-in').onclick=async()=>{try{
+    const cr=await signInWithEmailAndPassword(auth,document.getElementById('em').value.trim(),document.getElementById('pw').value);await finish(cr.user);
+  }catch(e){err(e.message)}};
+  document.getElementById('b-up').onclick=async()=>{try{
+    if(!nameField())return err('Add your display name to create an account.');
+    const cr=await createUserWithEmailAndPassword(auth,document.getElementById('em').value.trim(),document.getElementById('pw').value);await finish(cr.user);
+  }catch(e){err(e.message)}};
+  document.getElementById('b-g').onclick=async()=>{try{
+    const cr=await signInWithPopup(auth,new GoogleAuthProvider());await finish(cr.user,cr.user.displayName);
+  }catch(e){err(e.message)}};
+}
+
+/* ---------- teacher home ---------- */
+async function tHome(){
+  app.innerHTML=mast()+`<h2>Your classes</h2><p class="sub">Loading…</p>`;wireSignout();
+  const snap=await getDocs(query(collection(db,'classes'),where('teacherUid','==',S.user.uid)));
+  const rows=snap.docs.map(d=>({id:d.id,...d.data()}));
+  app.innerHTML=mast()+`
+  <h2>Your classes</h2>
+  ${rows.length?rows.map(c=>`
+    <div class="card clickable" data-id="${c.id}" data-code="${c.code}"><div class="row">
+      <div><h3 style="margin:0">${esc(c.name)}</h3><p class="meta">Join code ${c.code}</p></div>
+      <span class="stamp ink">Open</span></div></div>`).join('')
+   :`<div class="card"><p>No classes yet. The first one takes about ten seconds.</p></div>`}
+  <hr class="hr"><h3>New class</h3>
+  <label for="cn">Class name</label>
+  <input id="cn" type="text" placeholder="Lit &amp; Comp II — 2nd Block">
+  <button class="btn red" id="b-new">Create class</button>`;
+  wireSignout();
+  document.querySelectorAll('.card.clickable').forEach(el=>el.onclick=()=>openTClass(el.dataset.id,el.dataset.code));
+  document.getElementById('b-new').onclick=async()=>{
+    const n=document.getElementById('cn').value.trim();if(!n)return;
+    const code=makeCode();
+    const ref=await addDoc(collection(db,'classes'),{name:n,code,teacherUid:S.user.uid,teacherName:S.teacher.name,created:serverTimestamp()});
+    await setDoc(dCode(code),{classId:ref.id,className:n,teacherName:S.teacher.name,teacherUid:S.user.uid});
+    openTClass(ref.id,code);
+  };
+}
+async function openTClass(cid,code){
+  S.classId=cid;S.code=code;
+  const c=await getDoc(dClass(cid));S.cls=c.data();S.tab='assignments';
+  go('tClass');
+}
+
+/* ---------- teacher class ---------- */
+function tClass(){
+  UNSUBS.push(onSnapshot(cRoster(S.classId),s=>{
+    S.roster={};s.forEach(d=>S.roster[d.id]=d.data());if(S.view==='tClass')drawTClass();
+  }));
+  UNSUBS.push(onSnapshot(cAssign(S.classId),s=>{
+    S.assigns=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.createdMs||0)-(b.createdMs||0));
+    if(S.view==='tClass')drawTClass();
+  }));
+}
+function drawTClass(){
+  const names=Object.entries(S.roster).sort((a,b)=>a[1].name.localeCompare(b[1].name));
+  app.innerHTML=mast(`<a id="bk">&larr; Classes</a> / ${esc(S.cls.name)}`)+`
+  <h2>${esc(S.cls.name)}</h2>
+  <div class="codeblock"><div class="lbl">Join code</div><div class="code">${S.code}</div>
+    <p>Students open this site, choose "I'm a student," and enter the code with their name.</p></div>
+  <div class="tabs">
+    <div class="tab ${S.tab==='assignments'?'on':''}" id="tb-a">Assignments · ${S.assigns.length}</div>
+    <div class="tab ${S.tab==='students'?'on':''}" id="tb-s">Students · ${names.length}</div>
+  </div>
+  ${S.tab==='assignments'?tabAssign():tabStudents(names)}`;
+  wireSignout();
+  document.getElementById('bk').onclick=()=>go('tHome');
+  document.getElementById('tb-a').onclick=()=>{S.tab='assignments';drawTClass()};
+  document.getElementById('tb-s').onclick=()=>{S.tab='students';drawTClass()};
+  if(S.tab==='assignments'){
+    document.querySelectorAll('[data-aid]').forEach(el=>el.onclick=()=>{S.aid=el.dataset.aid;go('tMonitor')});
+    document.getElementById('b-newa').onclick=createAssign;
+  } else {
+    document.querySelectorAll('[data-iep]').forEach(el=>el.onclick=()=>toggleIEP(el.dataset.iep));
+  }
+}
+function tabAssign(){
+  return `${S.assigns.map(a=>`
+    <div class="card clickable" data-aid="${a.id}"><div class="row">
+      <div><h3 style="margin:0">${esc(a.title)}</h3>
+        <p class="meta">${esc(a.type||'Essay')}${a.minutes?` · ${a.minutes} min`:''}${a.spell?' · spell check on':''}</p></div>
+      <span class="stamp ${a.open?'':'grey'}">${a.open?'Room open':'Closed'}</span>
+    </div></div>`).join('')||'<div class="card"><p>No assignments yet. Write one below; it stays closed until you open the room.</p></div>'}
+  <hr class="hr"><h3>New assignment</h3>
+  <label for="at">Title</label><input id="at" type="text">
+  <label for="aty">Type (optional)</label><input id="aty" type="text" placeholder="Argumentative">
+  <label for="ap">Prompt</label><textarea id="ap"></textarea>
+  <label for="asrc">Source text (optional — the passage students may reference)</label><textarea id="asrc"></textarea>
+  <label for="am">Time limit in minutes (optional — blank for none)</label><input id="am" type="number" min="1" max="300">
+  <div class="checkline"><input id="asp" type="checkbox"><label for="asp" style="margin:0">Allow spell check</label></div>
+  <button class="btn red" id="b-newa">Create assignment</button>`;
+}
+function tabStudents(entries){
+  return entries.length?`<table><tr><th>Student</th><th>Accommodation override</th></tr>`+
+    entries.map(([sid,st])=>`<tr><td>${esc(st.name)}</td>
+      <td><button class="btn sm ${st.iep?'red':'ghost'}" data-iep="${sid}">${st.iep?'Override on':'Standard'}</button></td></tr>`).join('')+`</table>
+    <p class="note">Accommodation override lifts the paste block and lockout for that student (dictation, extended supports, 504/IEP). Their paste use is still logged so you keep the record.</p>`
+   :'<div class="card"><p>Nobody has joined yet. Share the code above.</p></div>';
+}
+async function toggleIEP(sid){
+  const cur=S.roster[sid];await updateDoc(dRoster(S.classId,sid),{iep:!cur.iep});
+}
+async function createAssign(){
+  const t=document.getElementById('at').value.trim();if(!t)return;
+  await addDoc(cAssign(S.classId),{
+    title:t,type:document.getElementById('aty').value.trim(),
+    prompt:document.getElementById('ap').value.trim(),source:document.getElementById('asrc').value,
+    minutes:parseInt(document.getElementById('am').value)||0,
+    spell:document.getElementById('asp').checked,open:false,
+    created:serverTimestamp(),createdMs:nowMs()});
+}
+
+/* ---------- teacher monitor ---------- */
+function tMonitor(){
+  S.viewStudent=null;S.acc={};S.works={};
+  UNSUBS.push(onSnapshot(dAssign(S.classId,S.aid),d=>{S.curAssign={id:d.id,...d.data()};drawMonitor()}));
+  UNSUBS.push(onSnapshot(cRoster(S.classId),s=>{S.roster={};s.forEach(d=>S.roster[d.id]=d.data());drawMonitor()}));
+  UNSUBS.push(onSnapshot(cAccess(S.classId,S.aid),s=>{S.acc={};s.forEach(d=>S.acc[d.id]=d.data().status);drawMonitor()}));
+  UNSUBS.push(onSnapshot(cWork(S.classId,S.aid),s=>{S.works={};s.forEach(d=>S.works[d.id]=d.data());drawMonitor()}));
+}
+const statusOf=sid=>S.acc[sid]||'waiting';
+const stampFor=st=>({waiting:'<span class="stamp grey">Waiting</span>',open:'<span class="stamp ink">Writing</span>',
+  locked_out:'<span class="stamp">Locked out</span>',submitted:'<span class="stamp">Submitted</span>'}[st]);
+function drawMonitor(){
+  if(S.view!=='tMonitor'||!S.curAssign)return;
+  const a=S.curAssign;
+  const entries=Object.entries(S.roster).sort((x,y)=>x[1].name.localeCompare(y[1].name));
+  app.innerHTML=mast(`<a id="bk1">&larr; Classes</a> / <a id="bk2">${esc(S.cls.name)}</a> / ${esc(a.title)}`)+`
+  <h2>${esc(a.title)}</h2>
+  <p class="meta">${esc(a.type||'Essay')}${a.minutes?` · ${a.minutes} min limit`:''}</p>
+  <div style="margin:14px 0">
+    <button class="btn ${a.open?'ghost':'red'}" id="b-room">${a.open?'Close the room':'Open the room for everyone'}</button>
+  </div>
+  ${entries.length?`<table><tr><th>Student</th><th>Status</th><th>Words</th><th>Flags</th><th>Actions</th></tr>
+  ${entries.map(([sid,st])=>{const stt=statusOf(sid);const w=S.works[sid];
+    const p=w?(w.events||[]).filter(e=>e.type==='paste_attempt').length:0;
+    const l=w?(w.events||[]).filter(e=>e.type==='lockout').length:0;
+    return `<tr>
+      <td><a style="cursor:pointer;color:var(--red);font-weight:bold" data-view="${sid}">${esc(st.name)}</a>${st.iep?' <span class="meta">(override)</span>':''}</td>
+      <td>${stampFor(stt)}</td>
+      <td class="meta">${w?wc(w.text):'—'}</td>
+      <td class="meta">${(p?`<span style="color:var(--red);font-weight:bold">${p} paste</span> `:'')+(l?`${l} lockout`:'')||'—'}</td>
+      <td>
+        ${stt==='waiting'?`<button class="btn sm" data-acc="${sid}|open">Admit</button>`:''}
+        ${stt==='locked_out'?`<button class="btn sm red" data-acc="${sid}|open">Re-admit</button>`:''}
+        ${stt==='submitted'?`<button class="btn sm ghost" data-reopen="${sid}">Reopen</button>`:''}
+        ${stt==='open'?`<button class="btn sm ghost" data-acc="${sid}|locked_out">Pause</button>`:''}
+      </td></tr>`}).join('')}</table>
+  <p class="meta" style="margin-top:8px">Click a name to read the draft and replay how it was typed.</p>`
+  :'<div class="card"><p>No students in this class yet.</p></div>'}
+  <div id="viewer">${S.viewStudent?viewerHtml():''}</div>`;
+  wireSignout();
+  document.getElementById('bk1').onclick=()=>go('tHome');
+  document.getElementById('bk2').onclick=()=>openTClass(S.classId,S.code);
+  document.getElementById('b-room').onclick=()=>toggleRoom(!a.open);
+  document.querySelectorAll('[data-acc]').forEach(el=>el.onclick=()=>{const[sid,st]=el.dataset.acc.split('|');setAcc(sid,st)});
+  document.querySelectorAll('[data-reopen]').forEach(el=>el.onclick=()=>reopenFor(el.dataset.reopen));
+  document.querySelectorAll('[data-view]').forEach(el=>el.onclick=()=>{S.viewStudent=el.dataset.view;S.snapIx=null;drawMonitor();
+    setTimeout(()=>{const v=document.getElementById('viewer');if(v)v.scrollIntoView({behavior:'smooth'})},50)});
+  wireViewer();
+}
+async function toggleRoom(open){
+  const batch=writeBatch(db);
+  batch.update(dAssign(S.classId,S.aid),{open});
+  if(open)for(const sid of Object.keys(S.roster))
+    if(S.acc[sid]!=='submitted')batch.set(dAccess(S.classId,S.aid,sid),{status:'open'});
+  await batch.commit();
+}
+const setAcc=(sid,status)=>setDoc(dAccess(S.classId,S.aid,sid),{status});
+async function reopenFor(sid){
+  const w=S.works[sid];
+  if(w)await updateDoc(dWork(S.classId,S.aid,sid),{events:[...(w.events||[]),{t:nowMs()-(w.startedAt||nowMs()),type:'reopened_by_teacher'}]});
+  await setAcc(sid,'open');
+}
+function viewerHtml(){
+  const sid=S.viewStudent,w=S.works[sid],name=S.roster[sid]?S.roster[sid].name:'Student';
+  if(!w)return `<hr class="hr"><h3>${esc(name)}</h3><p class="meta">Hasn't started writing yet.</p>`;
+  const ev=w.events||[],ops=w.ops||[],snaps=w.snaps||[];
+  const pastes=ev.filter(e=>e.type==='paste_attempt').length;
+  const locks=ev.filter(e=>e.type==='lockout').length;
+  const mins={};let prev=0;
+  for(const o of ops){const m=Math.floor(o.t/60000);mins[m]=(mins[m]||0)+Math.max(0,o.len-prev);prev=o.len}
+  const keys=Object.keys(mins).map(Number).sort((x,y)=>x-y);
+  const maxV=Math.max(1,...keys.map(k=>mins[k]));
+  const hot=keys.filter(k=>mins[k]>220);
+  const bars=keys.map(k=>`<div class="bar ${mins[k]>220?'hot':''}" style="height:${Math.max(4,Math.round(mins[k]/maxV*78))}px" title="min ${k+1}: ${mins[k]} chars"></div>`).join('');
+  const ix=S.snapIx==null?snaps.length-1:S.snapIx;
+  const shown=snaps.length?snaps[Math.min(ix,snaps.length-1)]:null;
+  return `<hr class="hr">
+  <h3>${esc(name)} — draft record</h3>
+  <div class="flagchips">
+    <span class="chip">${wc(w.text)} words</span>
+    <span class="chip">${fmtT((w.lastSave||w.startedAt)-w.startedAt)} writing time</span>
+    <span class="chip ${pastes?'warn':''}">${pastes} paste attempt${pastes===1?'':'s'}</span>
+    <span class="chip ${locks?'warn':''}">${locks} lockout${locks===1?'':'s'}</span>
+    <span class="chip ${hot.length?'warn':''}">${hot.length?'pace spike — review replay':'typical drafting pace'}</span>
+  </div>
+  <div class="eyebrow">Typing pace (characters per minute — red is faster than typical drafting)</div>
+  <div class="pace">${bars||'<span class="meta">No typing recorded yet.</span>'}</div>
+  ${snaps.length?`
+  <div class="eyebrow">Replay — drag to scrub through saved snapshots</div>
+  <input id="scrub" type="range" min="0" max="${snaps.length-1}" value="${Math.min(ix,snaps.length-1)}" style="width:100%">
+  <p class="meta" id="snapt">${fmtT(shown.t)} in</p>
+  <div class="snapview" id="snapbox">${esc(shown.text||'(blank)')}</div>`:''}
+  <div class="eyebrow">Session events</div>
+  ${ev.length?ev.map(e=>`<div class="evline ${['paste_attempt','lockout'].includes(e.type)?'bad':''}">
+     <span class="t">${fmtT(e.t)}</span> — ${esc(e.type.replace(/_/g,' '))}</div>`).join(''):'<p class="meta">None.</p>'}
+  <div class="eyebrow">Current draft</div>
+  <div class="snapview">${esc(w.text||'(blank)')}</div>
+  <button class="btn ghost sm" id="b-closerec">Close record</button>`;
+}
+function wireViewer(){
+  const sc=document.getElementById('scrub');
+  if(sc)sc.oninput=()=>{S.snapIx=+sc.value;const s=(S.works[S.viewStudent].snaps||[])[S.snapIx];
+    document.getElementById('snapbox').textContent=s.text||'(blank)';
+    document.getElementById('snapt').textContent=fmtT(s.t)+' in'};
+  const cb=document.getElementById('b-closerec');
+  if(cb)cb.onclick=()=>{S.viewStudent=null;drawMonitor()};
+}
+
+/* ---------- student join ---------- */
+function sJoin(){
+  app.innerHTML=mast(`<a id="back">&larr; Back</a>`)+`
+  <h2>Join your class</h2>
+  <label for="jc">Class code</label>
+  <input id="jc" type="text" maxlength="6" style="text-transform:uppercase;letter-spacing:.3em;font-size:24px" placeholder="C4GM8B">
+  <label for="jn">Your name (first and last)</label>
+  <input id="jn" type="text" autocomplete="off">
+  <button class="btn red" id="b-join">Join</button>
+  <p id="jerr" class="err" style="display:none"></p>`;
+  document.getElementById('back').onclick=()=>go('gate');
+  document.getElementById('b-join').onclick=async()=>{
+    const code=document.getElementById('jc').value.trim().toUpperCase();
+    const name=document.getElementById('jn').value.trim();
+    const err=document.getElementById('jerr');
+    if(!code||!name)return;
+    try{
+      if(!auth.currentUser)await signInAnonymously(auth);
+      const cd=await getDoc(dCode(code));
+      if(!cd.exists()){err.style.display='block';err.textContent='No class with that code. Check it with your teacher and try again.';return}
+      const {classId,className,teacherName}=cd.data();
+      await setDoc(dRoster(classId,auth.currentUser.uid),{name,iep:false,joined:serverTimestamp()},{merge:true});
+      S.student={name,classId,className,teacherName};
+      localStorage.setItem('rl-role','student');
+      localStorage.setItem('rl-student',JSON.stringify(S.student));
+      S.classId=classId;S.user=auth.currentUser;
+      go('sClass');
+    }catch(e){err.style.display='block';err.textContent=e.message}
+  };
+}
+
+/* ---------- student class ---------- */
+function sClass(){
+  const uid=auth.currentUser.uid;
+  UNSUBS.push(onSnapshot(cAssign(S.classId),s=>{
+    S.assigns=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.createdMs||0)-(b.createdMs||0));
+    /* subscribe to my access doc for any assignment we haven't seen yet */
+    for(const a of S.assigns){
+      if(S.sAcc[a.id]===undefined){
+        S.sAcc[a.id]='waiting';
+        UNSUBS.push(onSnapshot(dAccess(S.classId,a.id,uid),d=>{
+          S.sAcc[a.id]=d.exists()?d.data().status:'waiting';
+          if(S.view==='sClass')drawSClass();
+        }));
+      }
+    }
+    if(S.view==='sClass')drawSClass();
+  }));
+}
+function drawSClass(){
+  app.innerHTML=mast()+`
+  <h2>${esc(S.student.className)}</h2>
+  <p class="sub">Teacher: ${esc(S.student.teacherName)}</p>
+  ${S.assigns.length?S.assigns.map(a=>{
+    const st=S.sAcc[a.id]||'waiting';
+    const canEnter=a.open&&st==='open';
+    const label={waiting:'Waiting for your teacher',open:a.open?'Room open — enter to write':'Waiting for your teacher',
+      locked_out:'Locked — ask your teacher to re-admit you',submitted:'Submitted'}[st];
+    return `<div class="card ${canEnter?'clickable':''}" ${canEnter?`data-enter="${a.id}"`:''}>
+      <div class="row"><div><h3 style="margin:0">${esc(a.title)}</h3>
+      <p class="meta">${esc(a.type||'Essay')}${a.minutes?` · ${a.minutes} min`:''}</p>
+      <p class="meta">${label}</p></div>
+      ${stampFor(st)}</div></div>`}).join('')
+  :'<div class="card"><p>No assignments yet.</p></div>'}`;
+  wireSignout();
+  document.querySelectorAll('[data-enter]').forEach(el=>el.onclick=()=>{S.aid=el.dataset.enter;go('sRoom')});
+}
+
+/* ---------- student writing room ---------- */
+async function sRoom(){
+  const uid=auth.currentUser.uid;
+  const aSnap=await getDoc(dAssign(S.classId,S.aid));
+  if(!aSnap.exists()){go('sClass');return}
+  const a={id:aSnap.id,...aSnap.data()};
+  const rSnap=await getDoc(dRoster(S.classId,uid));
+  const iep=!!(rSnap.exists()&&rSnap.data().iep);
+  const wSnap=await getDoc(dWork(S.classId,S.aid,uid));
+  const w=wSnap.exists()?wSnap.data():{text:'',ops:[],snaps:[],events:[],startedAt:nowMs(),lastSave:nowMs(),submittedAt:null};
+  R={a,w,iep,uid,dirty:!wSnap.exists(),lockedNow:false,awayAt:null,
+     visHandler:null,blurHandler:null,focusHandler:null,keyHandler:null,saveTimer:null,tickTimer:null};
+  drawRoom();
+  /* live status: teacher can pause / re-admit at any moment */
+  UNSUBS.push(onSnapshot(dAccess(S.classId,S.aid,uid),d=>{
+    if(!R)return;
+    const st=d.exists()?d.data().status:'waiting';
+    if((st==='locked_out'||st==='waiting')&&!R.lockedNow&&!R.selfLocking)
+      lockScreen('Paused by your teacher','Ask to be re-admitted when you are ready to continue.');
+    if(st==='open'&&R.lockedNow)unlockScreen();
+  }));
+}
+function drawRoom(){
+  const a=R.a,w=R.w;
+  app.innerHTML=mast(`<a id="leave">&larr; ${esc(S.student.className)}</a> / ${esc(a.title)}`)+`
+  <div class="room">
+    <div class="roombar">
+      <span>Secure writing room${R.iep?' · accommodation mode':''}</span>
+      <span class="timer" id="timer">${a.minutes?'—:—':''}</span>
+    </div>
+    ${a.prompt?`<div class="prompt"><div class="eyebrow">Prompt</div>${esc(a.prompt)}</div>`:''}
+    ${a.source?`<div class="source">${esc(a.source)}</div>`:''}
+    <div class="deskwrap">
+      <textarea id="desk" class="desk" spellcheck="${a.spell?'true':'false'}" aria-label="Your essay">${esc(w.text)}</textarea>
+    </div>
+    <div class="deskfoot">
+      <span id="wcount">${wc(w.text)} words · saves automatically</span>
+      <button class="btn red" id="b-sub">Submit essay</button>
+    </div>
+  </div>
+  <p class="meta" style="margin-top:10px">Pasting is off in this room${R.iep?' — lifted for you, and paste use is noted for your teacher':''}. Leaving this page pauses your session; your teacher re-admits you.</p>
+  <div id="ov"></div>`;
+  wireSignout();
+  document.getElementById('leave').onclick=leaveRoomSafely;
+  document.getElementById('b-sub').onclick=()=>submitEssay(false);
+  wireRoom();
+}
+function wireRoom(){
+  const d=document.getElementById('desk');
+  const t0=R.w.startedAt;
+  const logEv=t=>{R.w.events.push({t:nowMs()-t0,type:t});R.dirty=true};
+  d.addEventListener('input',()=>{
+    R.w.text=d.value;R.dirty=true;
+    R.w.ops.push({t:nowMs()-t0,len:d.value.length});
+    if(R.w.ops.length>12000)R.w.ops=R.w.ops.filter((_,i)=>i%2===0);
+    document.getElementById('wcount').textContent=wc(d.value)+' words · saves automatically';
+  });
+  if(!R.iep){
+    ['paste','drop'].forEach(evt=>d.addEventListener(evt,e=>{e.preventDefault();logEv('paste_attempt');flash('Paste is off')}));
+    d.addEventListener('beforeinput',e=>{if(e.inputType==='insertFromPaste'||e.inputType==='insertFromDrop'){e.preventDefault();logEv('paste_attempt');flash('Paste is off')}});
+    ['copy','cut'].forEach(evt=>d.addEventListener(evt,e=>{e.preventDefault();logEv('copy_attempt');flash('Copying is off')}));
+    d.addEventListener('contextmenu',e=>e.preventDefault());
+    R.keyHandler=e=>{if((e.ctrlKey||e.metaKey)&&['v','c','x'].includes(e.key.toLowerCase())&&document.activeElement===d){
+      e.preventDefault();logEv(e.key.toLowerCase()==='v'?'paste_attempt':'copy_attempt');
+      flash(e.key.toLowerCase()==='v'?'Paste is off':'Copying is off')}};
+    document.addEventListener('keydown',R.keyHandler);
+  } else {
+    d.addEventListener('paste',()=>logEv('paste_used'));
+  }
+  const away=()=>{if(!R||R.iep||R.lockedNow)return;R.awayAt=nowMs();logEv('left_page')};
+  const back=async()=>{
+    if(!R||R.iep||R.lockedNow||!R.awayAt)return;
+    const gone=nowMs()-R.awayAt;R.awayAt=null;
+    if(gone>5000){
+      logEv('lockout');R.selfLocking=true;
+      await saveWork();await setMyAcc('locked_out');R.selfLocking=false;
+      lockScreen('You left the writing room','Your session is paused. Your teacher can re-admit you — your draft is saved.');
+    } else {logEv('returned_in_grace');flash('Stay on this page')}
+  };
+  R.visHandler=()=>{document.hidden?away():back()};
+  R.blurHandler=away;R.focusHandler=back;
+  document.addEventListener('visibilitychange',R.visHandler);
+  window.addEventListener('blur',R.blurHandler);
+  window.addEventListener('focus',R.focusHandler);
+  R.saveTimer=setInterval(async()=>{
+    if(!R||!R.dirty)return;
+    const last=R.w.snaps[R.w.snaps.length-1];
+    if(!last||last.text!==R.w.text){
+      R.w.snaps.push({t:nowMs()-t0,text:R.w.text});
+      if(R.w.snaps.length>40)R.w.snaps=R.w.snaps.filter((s,i)=>i%2===0||i===R.w.snaps.length-1);
+    }
+    R.dirty=false;await saveWork();
+  },8000);
+  const aa=R.a;
+  if(aa.minutes){
+    R.tickTimer=setInterval(()=>{
+      if(!R)return;
+      const remain=aa.minutes*60000-(nowMs()-t0);
+      const el=document.getElementById('timer');if(!el)return;
+      el.textContent=fmtT(remain);el.classList.toggle('low',remain<5*60000);
+      if(remain<=0){clearInterval(R.tickTimer);logEv('time_expired');submitEssay(true)}
+    },1000);
+  }
+  d.focus();
+}
+async function saveWork(){
+  if(!R)return;
+  R.w.lastSave=nowMs();
+  await setDoc(dWork(S.classId,S.aid,R.uid),R.w);
+}
+const setMyAcc=status=>setDoc(dAccess(S.classId,S.aid,R.uid),{status});
+function lockScreen(title,msg){
+  if(!R)return;R.lockedNow=true;
+  document.getElementById('ov').innerHTML=`<div class="overlay"><div class="box">
+    <span class="stamp big">Locked</span>
+    <h2 style="margin-top:24px">${esc(title)}</h2><p>${esc(msg)}</p>
+    <button class="btn ghost" id="b-back">Back to class page</button></div></div>`;
+  document.getElementById('b-back').onclick=()=>go('sClass');
+}
+function unlockScreen(){
+  if(!R)return;R.lockedNow=false;
+  const o=document.getElementById('ov');if(o)o.innerHTML='';
+  flash('Re-admitted — keep writing');
+  const d=document.getElementById('desk');if(d)d.focus();
+}
+async function submitEssay(autoByTime){
+  if(!R||R.submitBusy)return;R.submitBusy=true;
+  R.w.events.push({t:nowMs()-R.w.startedAt,type:autoByTime?'auto_submitted_time':'submitted'});
+  R.w.submittedAt=nowMs();
+  R.selfLocking=true;await saveWork();await setMyAcc('submitted');R.selfLocking=false;
+  R.lockedNow=true;
+  document.getElementById('ov').innerHTML=`<div class="overlay"><div class="box">
+    <span class="stamp big">Submitted</span>
+    <h2 style="margin-top:24px">${autoByTime?'Time expired — your essay was turned in':'Your essay is turned in'}</h2>
+    <p>You can't edit it unless your teacher reopens it for you.</p>
+    <button class="btn" id="b-back">Back to class page</button></div></div>`;
+  document.getElementById('b-back').onclick=()=>go('sClass');
+}
+function leaveRoomSafely(){
+  if(R&&!R.lockedNow&&!R.iep){
+    R.w.events.push({t:nowMs()-R.w.startedAt,type:'left_page'});
+    R.selfLocking=true;saveWork();setMyAcc('locked_out');
+  }
+  go('sClass');
+}
+</script>
+</body>
+</html>
+
