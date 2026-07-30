@@ -344,8 +344,6 @@ function drawTClass(){
   if(S.tab==='assignments'){
     document.querySelectorAll('[data-aid]').forEach(el=>el.onclick=()=>{S.aid=el.dataset.aid;go('tMonitor')});
     document.getElementById('b-newa').onclick=createAssign;
-  } else {
-    document.querySelectorAll('[data-iep]').forEach(el=>el.onclick=()=>toggleIEP(el.dataset.iep));
   }
 }
 function tabAssign(){
@@ -365,14 +363,9 @@ function tabAssign(){
   <button class="btn red" id="b-newa">Create assignment</button>`;
 }
 function tabStudents(entries){
-  return entries.length?`<table><tr><th>Student</th><th>Accommodation override</th></tr>`+
-    entries.map(([sid,st])=>`<tr><td>${esc(st.name)}</td>
-      <td><button class="btn sm ${st.iep?'red':'ghost'}" data-iep="${sid}">${st.iep?'Override on':'Standard'}</button></td></tr>`).join('')+`</table>
-    <p class="note">Accommodation override lifts the paste block and lockout for that student (dictation, extended supports, 504/IEP). Their paste use is still logged so you keep the record.</p>`
+  return entries.length?`<table><tr><th>Student</th></tr>`+
+    entries.map(([sid,st])=>`<tr><td>${esc(st.name)}</td></tr>`).join('')+`</table>`
    :'<div class="card"><p>Nobody has joined yet. Share the code above.</p></div>';
-}
-async function toggleIEP(sid){
-  const cur=S.roster[sid];await updateDoc(dRoster(S.classId,sid),{iep:!cur.iep});
 }
 async function createAssign(){
   const t=document.getElementById('at').value.trim();if(!t)return;
@@ -410,7 +403,7 @@ function drawMonitor(){
     const p=w?(w.events||[]).filter(e=>e.type==='paste_attempt').length:0;
     const l=w?(w.events||[]).filter(e=>e.type==='lockout').length:0;
     return `<tr>
-      <td><a style="cursor:pointer;color:var(--red);font-weight:bold" data-view="${sid}">${esc(st.name)}</a>${st.iep?' <span class="meta">(override)</span>':''}</td>
+      <td><a style="cursor:pointer;color:var(--red);font-weight:bold" data-view="${sid}">${esc(st.name)}</a></td>
       <td>${stampFor(stt)}</td>
       <td class="meta">${w?wc(w.text):'—'}</td>
       <td class="meta">${(p?`<span style="color:var(--red);font-weight:bold">${p} paste</span> `:'')+(l?`${l} lockout`:'')||'—'}</td>
@@ -513,7 +506,7 @@ function sJoin(){
       const cd=await getDoc(dCode(code));
       if(!cd.exists()){err.style.display='block';err.textContent='No class with that code. Check it with your teacher and try again.';return}
       const {classId,className,teacherName}=cd.data();
-      await setDoc(dRoster(classId,auth.currentUser.uid),{name,iep:false,joined:serverTimestamp()},{merge:true});
+      await setDoc(dRoster(classId,auth.currentUser.uid),{name,joined:serverTimestamp()},{merge:true});
       S.student={name,classId,className,teacherName};
       localStorage.setItem('rl-role','student');
       localStorage.setItem('rl-student',JSON.stringify(S.student));
@@ -566,11 +559,9 @@ async function sRoom(){
   const aSnap=await getDoc(dAssign(S.classId,S.aid));
   if(!aSnap.exists()){go('sClass');return}
   const a={id:aSnap.id,...aSnap.data()};
-  const rSnap=await getDoc(dRoster(S.classId,uid));
-  const iep=!!(rSnap.exists()&&rSnap.data().iep);
   const wSnap=await getDoc(dWork(S.classId,S.aid,uid));
   const w=wSnap.exists()?wSnap.data():{text:'',ops:[],snaps:[],events:[],startedAt:nowMs(),lastSave:nowMs(),submittedAt:null};
-  R={a,w,iep,uid,dirty:!wSnap.exists(),lockedNow:false,awayAt:null,
+  R={a,w,uid,dirty:!wSnap.exists(),lockedNow:false,awayAt:null,
      visHandler:null,blurHandler:null,focusHandler:null,keyHandler:null,saveTimer:null,tickTimer:null};
   drawRoom();
   /* live status: teacher can pause / re-admit at any moment */
@@ -587,7 +578,7 @@ function drawRoom(){
   app.innerHTML=mast(`<a id="leave">&larr; ${esc(S.student.className)}</a> / ${esc(a.title)}`)+`
   <div class="room">
     <div class="roombar">
-      <span>Secure writing room${R.iep?' · accommodation mode':''}</span>
+      <span>Secure writing room</span>
       <span class="timer" id="timer">${a.minutes?'—:—':''}</span>
     </div>
     ${a.prompt?`<div class="prompt"><div class="eyebrow">Prompt</div>${esc(a.prompt)}</div>`:''}
@@ -600,7 +591,7 @@ function drawRoom(){
       <button class="btn red" id="b-sub">Submit essay</button>
     </div>
   </div>
-  <p class="meta" style="margin-top:10px">Pasting is off in this room${R.iep?' — lifted for you, and paste use is noted for your teacher':''}. Leaving this page pauses your session; your teacher re-admits you.</p>
+  <p class="meta" style="margin-top:10px">Pasting is off in this room. Leaving this page pauses your session; your teacher re-admits you.</p>
   <div id="ov"></div>`;
   wireSignout();
   document.getElementById('leave').onclick=leaveRoomSafely;
@@ -617,21 +608,17 @@ function wireRoom(){
     if(R.w.ops.length>12000)R.w.ops=R.w.ops.filter((_,i)=>i%2===0);
     document.getElementById('wcount').textContent=wc(d.value)+' words · saves automatically';
   });
-  if(!R.iep){
-    ['paste','drop'].forEach(evt=>d.addEventListener(evt,e=>{e.preventDefault();logEv('paste_attempt');flash('Paste is off')}));
-    d.addEventListener('beforeinput',e=>{if(e.inputType==='insertFromPaste'||e.inputType==='insertFromDrop'){e.preventDefault();logEv('paste_attempt');flash('Paste is off')}});
-    ['copy','cut'].forEach(evt=>d.addEventListener(evt,e=>{e.preventDefault();logEv('copy_attempt');flash('Copying is off')}));
-    d.addEventListener('contextmenu',e=>e.preventDefault());
-    R.keyHandler=e=>{if((e.ctrlKey||e.metaKey)&&['v','c','x'].includes(e.key.toLowerCase())&&document.activeElement===d){
-      e.preventDefault();logEv(e.key.toLowerCase()==='v'?'paste_attempt':'copy_attempt');
-      flash(e.key.toLowerCase()==='v'?'Paste is off':'Copying is off')}};
-    document.addEventListener('keydown',R.keyHandler);
-  } else {
-    d.addEventListener('paste',()=>logEv('paste_used'));
-  }
-  const away=()=>{if(!R||R.iep||R.lockedNow)return;R.awayAt=nowMs();logEv('left_page')};
+  ['paste','drop'].forEach(evt=>d.addEventListener(evt,e=>{e.preventDefault();logEv('paste_attempt');flash('Paste is off')}));
+  d.addEventListener('beforeinput',e=>{if(e.inputType==='insertFromPaste'||e.inputType==='insertFromDrop'){e.preventDefault();logEv('paste_attempt');flash('Paste is off')}});
+  ['copy','cut'].forEach(evt=>d.addEventListener(evt,e=>{e.preventDefault();logEv('copy_attempt');flash('Copying is off')}));
+  d.addEventListener('contextmenu',e=>e.preventDefault());
+  R.keyHandler=e=>{if((e.ctrlKey||e.metaKey)&&['v','c','x'].includes(e.key.toLowerCase())&&document.activeElement===d){
+    e.preventDefault();logEv(e.key.toLowerCase()==='v'?'paste_attempt':'copy_attempt');
+    flash(e.key.toLowerCase()==='v'?'Paste is off':'Copying is off')}};
+  document.addEventListener('keydown',R.keyHandler);
+  const away=()=>{if(!R||R.lockedNow)return;R.awayAt=nowMs();logEv('left_page')};
   const back=async()=>{
-    if(!R||R.iep||R.lockedNow||!R.awayAt)return;
+    if(!R||R.lockedNow||!R.awayAt)return;
     const gone=nowMs()-R.awayAt;R.awayAt=null;
     if(gone>5000){
       logEv('lockout');R.selfLocking=true;
@@ -699,7 +686,7 @@ async function submitEssay(autoByTime){
   document.getElementById('b-back').onclick=()=>go('sClass');
 }
 function leaveRoomSafely(){
-  if(R&&!R.lockedNow&&!R.iep){
+  if(R&&!R.lockedNow){
     R.w.events.push({t:nowMs()-R.w.startedAt,type:'left_page'});
     R.selfLocking=true;saveWork();setMyAcc('locked_out');
   }
